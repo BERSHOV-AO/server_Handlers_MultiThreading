@@ -24,17 +24,12 @@ public class Server {
     private ConcurrentHashMap<String, Map<String, Handler>> handlersStorageMap;
 
     public Server(int port) {
-        //  try {
-        // serverSocket = new ServerSocket(port);
-        PORT_SERVER_SOCKET = port;
 
+        PORT_SERVER_SOCKET = port;
         threadPool = Executors.newFixedThreadPool(NUMBER_THREADS);
         handlersStorageMap = new ConcurrentHashMap<>();
-
         System.out.println("Веб-сервер запущен на порту " + PORT_SERVER_SOCKET);
-        //   } catch (IOException e) {
-        //       e.printStackTrace();
-        //    }
+
     }
 
     public void start() {
@@ -45,21 +40,10 @@ public class Server {
                 threadPool.execute(() -> handleConnection(clientSocket));
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
             threadPool.shutdown();
         }
-//        try {
-//            while (true) {
-//                Socket clientSocket = serverSocket.accept();
-//                System.out.println("Подключение принято от клиента: " + clientSocket.getInetAddress().getHostAddress());
-//
-//                threadPool.execute(() -> handleConnection(clientSocket));
-//
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
     private void handleConnection(Socket clientSocket) {
@@ -79,10 +63,10 @@ public class Server {
 
             String method = parts[0];
             final var path = parts[1];
-            Request request = new Request(method, path);
+            Request request = createRequest(method, path);
 
             // Проверяем наличие плохих запросов и разрываем соединение
-            if (request == null || !handlersStorageMap.contains(request.getMethod())) {
+            if (request == null || !handlersStorageMap.containsKey(request.getMethod())) {
                 outContentResponse(out, NOT_FOUND_CODE, "Bad Request");
                 return;
             }
@@ -99,7 +83,7 @@ public class Server {
                     outContentResponse(out, NOT_FOUND_CODE, NOT_FOUND_TEXT);
                 } else {
                     System.out.println("default handler");
-                    //defaultHandler(out, path);
+                    defaultHandler(out, path);
                 }
             }
         } catch (IOException e) {
@@ -156,58 +140,6 @@ public class Server {
         }
         handlersStorageMap.get(method).put(path, handler);
     }
-
-
-
-//            if (!validPaths.contains(path)) {
-//                out.write((
-//                        "HTTP/1.1 404 Not Found\r\n" +
-//                                "Content-Length: 0\r\n" +
-//                                "Connection: close\r\n" +
-//                                "\r\n"
-//                ).getBytes());
-//                out.flush();
-//                return;
-//            }
-//
-//            final var filePath = Path.of(".", "public", path);
-//            final var mimeType = Files.probeContentType(filePath);
-//
-//            if (path.equals("/classic.html")) {
-//                final var template = Files.readString(filePath);
-//
-//                final var content = template.replace(
-//                        "{time}", LocalDateTime.now().toString()
-//                ).getBytes();
-//                out.write((
-//                        "HTTP/1.1 200 OK\r\n" +
-//                                "Content-Type: " + mimeType + "\r\n" +
-//                                "Content-Length: " + content.length + "\r\n" +
-//                                "Connection: close\r\n" +
-//                                "\r\n"
-//                ).getBytes());
-//                out.write(content);
-//                out.flush();
-//                return;
-//            }
-//
-//            final var length = Files.size(filePath);
-//            out.write((
-//                    "HTTP/1.1 200 OK\r\n" +
-//                            "Content-Type: " + mimeType + "\r\n" +
-//                            "Content-Length: " + length + "\r\n" +
-//                            "Connection: close\r\n" +
-//                            "\r\n"
-//            ).getBytes());
-//            Files.copy(filePath, out);
-//            out.flush();
-//
-//            clientSocket.close();
-//            System.out.println("Подключение закрыто для клиента: " + clientSocket.getInetAddress().getHostAddress());
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
 
     public void outContentResponse(BufferedOutputStream out, String code, String status) throws IOException {
         out.write((
