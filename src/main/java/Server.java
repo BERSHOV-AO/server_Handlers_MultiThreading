@@ -20,7 +20,6 @@ public class Server {
             "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
     private ExecutorService threadPool;
-
     private ConcurrentHashMap<String, Map<String, Handler>> handlersStorageMap;
 
     public Server(int port) {
